@@ -22,7 +22,7 @@ function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      navigate("/dashboard");
+      navigate("/party-select");
     } catch (err) {
       setError(err.response?.data?.msg || "Login failed");
     }
@@ -67,7 +67,7 @@ function Login() {
           {error && <p style={{ color: "red", paddingBottom: "25px" }}>{error}</p>}
 
           <button type="submit" className="enter-btn">
-            ENTER PARTY
+            LETS GO!
           </button>
         </form>
 
