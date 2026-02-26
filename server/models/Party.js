@@ -32,8 +32,44 @@ const PartySchema = new mongoose.Schema(
       enum: ["waiting", "active", "finished"],
       default: "waiting",
     },
+
+    // 🔥 ADD THESE BELOW
+
+    foodOptions: [
+      {
+        name: { type: String, required: true },
+        addedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        votes: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+          },
+        ],
+      },
+    ],
+
+    gameOptions: [
+      {
+        name: { type: String, required: true },
+        addedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        votes: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+          },
+        ],
+      },
+    ],
   },
   { timestamps: true }
 );
+
+
 
 module.exports = mongoose.model("Party", PartySchema);
