@@ -65,4 +65,31 @@ router.get("/:partyCode", async (req, res) => {
   }
 });
 
+// UPDATE CATEGORY (HOST ONLY)
+router.put("/:partyCode/category", authMiddleware, async (req, res) => {
+  try {
+    const { category } = req.body;
+
+    const party = await Party.findOne({
+      partyCode: req.params.partyCode
+    });
+
+    if (!party) {
+      return res.status(404).json({ msg: "Party not found" });
+    }
+
+    // Only host can update
+    if (party.host.toString() !== req.user) {
+      return res.status(403).json({ msg: "Only host can change category" });
+    }
+
+    party.currentCategory = category;
+    await party.save();
+
+    res.json(party);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

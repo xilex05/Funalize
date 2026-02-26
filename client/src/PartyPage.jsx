@@ -39,11 +39,58 @@ function PartyPage() {
 
   if (!party) return <h2>Loading...</h2>;
 
+  const changeCategory = async (category) => {
+    const res = await fetch(
+      `http://localhost:5000/api/party/${partyCode}/category`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ category })
+      }
+    );
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setParty(data);
+    }
+  };
+
   return (
     <div>
       <h1>Party Code: {party.partyCode}</h1>
-      <p>Members: {party.members.length}</p>
-      {isHost && <p>You are the Host</p>}
+
+      <div style={{ marginTop: "20px" }}>
+        <button
+          disabled={!isHost}
+          onClick={() => changeCategory("food")}
+        >
+          Food
+        </button>
+
+        <button
+          disabled={!isHost}
+          onClick={() => changeCategory("games")}
+        >
+          Games
+        </button>
+
+        <button
+          disabled={!isHost}
+          onClick={() => changeCategory("music")}
+        >
+          Music
+        </button>
+      </div>
+
+      <h2 style={{ marginTop: "30px" }}>
+        Current Category: {party.currentCategory}
+      </h2>
+
+      {!isHost && <p>Waiting for host...</p>}
     </div>
   );
 }
