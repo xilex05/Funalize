@@ -86,6 +86,15 @@ router.put("/:partyCode/category", authMiddleware, async (req, res) => {
     party.currentCategory = category;
     await party.save();
 
+    const io = req.app.get("io");
+
+    console.log("Emitting category update to room:", req.params.partyCode);
+
+    io.to(req.params.partyCode).emit("categoryUpdated", {
+      partyCode: req.params.partyCode,
+      currentCategory: party.currentCategory
+    });
+
     res.json(party);
   } catch (err) {
     res.status(500).json({ error: err.message });

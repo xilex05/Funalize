@@ -1,5 +1,9 @@
+import { io } from "socket.io-client";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+
+
+const socket = io("http://localhost:5000");
 
 function PartyPage() {
   const { partyCode } = useParams();
@@ -38,6 +42,22 @@ function PartyPage() {
     };
 
     fetchParty();
+
+    socket.emit("joinPartyRoom", partyCode);
+
+    const handleCategoryUpdate = (data) => {
+      setParty(prev => ({
+        ...prev,
+        currentCategory: data.currentCategory
+      }));
+    };
+
+    socket.on("categoryUpdated", handleCategoryUpdate);
+
+    return () => {
+      socket.off("categoryUpdated", handleCategoryUpdate);
+    };
+
   }, [partyCode]);
 
   if (!party) return <h2>Loading...</h2>;
