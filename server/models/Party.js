@@ -42,8 +42,12 @@ const PartySchema = new mongoose.Schema(
     finalizedResult: {
       category: {
         type: String,
-        enum: ["food", "games", "music"],
+        enum: ["food", "games", "music", "all"],
         default: null,
+      },
+      optionNames: {
+        type: [String],
+        default: [],
       },
       optionName: {
         type: String,
@@ -84,6 +88,28 @@ const PartySchema = new mongoose.Schema(
             ref: "User",
           },
         ],
+      },
+    ],
+
+    chatMessages: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        user: {
+          type: String,
+          required: true,
+        },
+        text: {
+          type: String,
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
   },

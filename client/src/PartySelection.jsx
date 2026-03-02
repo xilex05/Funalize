@@ -1,64 +1,104 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./App.css";
 
 function PartySelection() {
   const navigate = useNavigate();
   const [partyCode, setPartyCode] = useState("");
+  const [error, setError] = useState("");
 
   const token = localStorage.getItem("token");
 
   const handleHost = async () => {
-    const res = await fetch("http://localhost:5000/api/party/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      }
-    });
+    try {
+      const res = await fetch("http://localhost:5000/api/party/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-    const data = await res.json();
-    navigate(`/party/${data.partyCode}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.msg || "Could not create party");
+        return;
+      }
+
+      navigate(`/party/${data.partyCode}`);
+    } catch (_err) {
+      setError("Could not create party");
+    }
   };
 
-const handleJoin = async () => {
-  if (!partyCode.trim()) {
-    alert("Please enter a party code");
-    return;
-  }
+  const handleJoin = async () => {
+    if (!partyCode.trim()) {
+      setError("Please enter a party code");
+      return;
+    }
 
-  const res = await fetch("http://localhost:5000/api/party/join", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ partyCode })
-  });
+    try {
+      const res = await fetch("http://localhost:5000/api/party/join", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ partyCode })
+      });
 
-  const data = await res.json();
+      const data = await res.json();
 
-  if (!res.ok) {
-    alert(data.msg || "Failed to join party");
-    return;
-  }
+      if (!res.ok) {
+        setError(data.msg || "Failed to join party");
+        return;
+      }
 
-  navigate(`/party/${data.partyCode}`);
-};
+      setError("");
+      navigate(`/party/${data.partyCode}`);
+    } catch (_err) {
+      setError("Failed to join party");
+    }
+  };
 
   return (
-    <div>
-      <h2>Host or Join Party</h2>
+    <div className="container">
+      <div className="logo-icons">
+        <i className="bi bi-fork-knife"></i>
+        <i className="bi bi-controller"></i>
+        <i className="bi bi-music-note-beamed"></i>
+      </div>
 
-      <button onClick={handleHost}>Host Party</button>
+      <h1 className="logo-text">FUNALIZE</h1>
+      <p className="tagline">Host or join your party room</p>
 
-      <div>
-        <input
-          type="text"
-          placeholder="Enter Party Code"
-          value={partyCode}
-          onChange={(e) => setPartyCode(e.target.value)}
-        />
-        <button onClick={handleJoin}>Join Party</button>
+      <div className="card party-select-card">
+        <button type="button" className="enter-btn" onClick={handleHost}>
+          <i className="bi bi-stars"></i>
+          Host Party
+        </button>
+
+        <div className="party-select-divider">
+          <span>OR JOIN WITH CODE</span>
+        </div>
+
+        <div className="input-group">
+          <label>Party Code</label>
+          <input
+            type="text"
+            placeholder="Enter Party Code"
+            value={partyCode}
+            onChange={(e) => setPartyCode(e.target.value.toUpperCase())}
+          />
+        </div>
+
+        {error && <p className="party-select-error">{error}</p>}
+
+        <button type="button" className="enter-btn party-join-btn" onClick={handleJoin}>
+          <i className="bi bi-box-arrow-in-right"></i>
+          Join Party
+        </button>
       </div>
     </div>
   );
