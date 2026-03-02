@@ -10,7 +10,22 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow same-machine Vite dev servers across ports (e.g. 5173, 5174)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const isLocalDevOrigin =
+        /^http:\/\/localhost:\d+$/.test(origin) ||
+        /^http:\/\/127\.0\.0\.1:\d+$/.test(origin);
+
+      if (isLocalDevOrigin) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Socket.IO CORS blocked origin"), false);
+    },
     methods: ["GET", "POST", "PUT"]
   }
 });

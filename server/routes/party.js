@@ -4,12 +4,10 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-/* Generate random 6-character code */
 function generateCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-/* CREATE PARTY */
 router.post("/create", authMiddleware, async (req, res) => {
   try {
     const partyCode = generateCode();
@@ -28,7 +26,6 @@ router.post("/create", authMiddleware, async (req, res) => {
   }
 });
 
-/* JOIN PARTY */
 router.post("/join", authMiddleware, async (req, res) => {
   try {
     const { partyCode } = req.body;
@@ -50,7 +47,6 @@ router.post("/join", authMiddleware, async (req, res) => {
   }
 });
 
-// GET PARTY DETAILS
 router.get("/:partyCode", async (req, res) => {
   try {
     const party = await Party.findOne({ partyCode: req.params.partyCode });
@@ -65,7 +61,6 @@ router.get("/:partyCode", async (req, res) => {
   }
 });
 
-// UPDATE CATEGORY (HOST ONLY)
 router.put("/:partyCode/category", authMiddleware, async (req, res) => {
   try {
     const { category } = req.body;
@@ -78,7 +73,6 @@ router.put("/:partyCode/category", authMiddleware, async (req, res) => {
       return res.status(404).json({ msg: "Party not found" });
     }
 
-    // Only host can update
     if (party.host.toString() !== req.user) {
       return res.status(403).json({ msg: "Only host can change category" });
     }
@@ -88,11 +82,13 @@ router.put("/:partyCode/category", authMiddleware, async (req, res) => {
 
     const io = req.app.get("io");
 
-    console.log("Emitting category update to room:", req.params.partyCode);
-
     io.to(req.params.partyCode).emit("categoryUpdated", {
       partyCode: req.params.partyCode,
-      currentCategory: party.currentCategory
+      currentCategory: party.currentCategory,
+      selectionMode: party.selectionMode,
+      finalizedResult: party.finalizedResult,
+      foodOptions: party.foodOptions,
+      gameOptions: party.gameOptions
     });
 
     res.json(party);
@@ -101,7 +97,56 @@ router.put("/:partyCode/category", authMiddleware, async (req, res) => {
   }
 });
 
-// ADD OPTION (MAX 3 PER USER)
+router.put("/:partyCode/selection-mode", authMiddleware, async (req, res) => {
+  try {
+    const { selectionMode } = req.body;
+
+    const isValidMode =
+      selectionMode === null ||
+      selectionMode === "voting" ||
+      selectionMode === "random";
+
+    if (!isValidMode) {
+      return res.status(400).json({ msg: "Invalid selection mode" });
+    }
+
+    const party = await Party.findOne({
+      partyCode: req.params.partyCode
+    });
+
+    if (!party) {
+      return res.status(404).json({ msg: "Party not found" });
+    }
+
+    if (party.host.toString() !== req.user) {
+      return res.status(403).json({ msg: "Only host can select mode" });
+    }
+
+    party.selectionMode = selectionMode;
+    await party.save();
+
+    const io = req.app.get("io");
+
+    io.to(req.params.partyCode).emit("modeUpdated", {
+      partyCode: req.params.partyCode,
+      selectionMode: party.selectionMode
+    });
+
+    io.to(req.params.partyCode).emit("optionsUpdated", {
+      partyCode: req.params.partyCode,
+      currentCategory: party.currentCategory,
+      selectionMode: party.selectionMode,
+      finalizedResult: party.finalizedResult,
+      foodOptions: party.foodOptions,
+      gameOptions: party.gameOptions
+    });
+
+    res.json(party);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post("/:partyCode/add-option", authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
@@ -118,15 +163,21 @@ router.post("/:partyCode/add-option", authMiddleware, async (req, res) => {
       return res.status(404).json({ msg: "Party not found" });
     }
 
+    const isHost = party.host.toString() === req.user;
+
+    if (party.selectionMode && !isHost) {
+      return res.status(400).json({
+        msg: "Options are locked after mode selection"
+      });
+    }
+
     const userId = req.user;
 
-    // Decide which array to use
     const optionArray =
       party.currentCategory === "food"
         ? party.foodOptions
         : party.gameOptions;
 
-    // Count how many options this user already added
     const userOptions = optionArray.filter(
       option => option.addedBy.toString() === userId
     );
@@ -137,7 +188,6 @@ router.post("/:partyCode/add-option", authMiddleware, async (req, res) => {
       });
     }
 
-    // Push new option
     optionArray.push({
       name: name.trim(),
       addedBy: userId,
@@ -146,14 +196,89 @@ router.post("/:partyCode/add-option", authMiddleware, async (req, res) => {
 
     await party.save();
 
-    res.json(party);
+    const io = req.app.get("io");
 
+    io.to(req.params.partyCode).emit("optionsUpdated", {
+      partyCode: req.params.partyCode,
+      currentCategory: party.currentCategory,
+      selectionMode: party.selectionMode,
+      finalizedResult: party.finalizedResult,
+      foodOptions: party.foodOptions,
+      gameOptions: party.gameOptions
+    });
+
+    res.json(party);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// VOTE OPTION (MAX 2 PER USER)
+router.delete("/:partyCode/delete-option", authMiddleware, async (req, res) => {
+  try {
+    const { optionName } = req.body;
+
+    if (!optionName || !optionName.trim()) {
+      return res.status(400).json({ msg: "Option name required" });
+    }
+
+    const party = await Party.findOne({
+      partyCode: req.params.partyCode
+    });
+
+    if (!party) {
+      return res.status(404).json({ msg: "Party not found" });
+    }
+
+    const userId = req.user;
+    const isHost = party.host.toString() === userId;
+
+    if (party.selectionMode && !isHost) {
+      return res.status(400).json({
+        msg: "Options are locked after mode selection"
+      });
+    }
+
+    const optionArray =
+      party.currentCategory === "food"
+        ? party.foodOptions
+        : party.gameOptions;
+
+    const optionIndex = optionArray.findIndex(option => {
+      if (option.name !== optionName.trim()) {
+        return false;
+      }
+
+      if (isHost) {
+        return true;
+      }
+
+      return option.addedBy.toString() === userId;
+    });
+
+    if (optionIndex === -1) {
+      return res.status(404).json({ msg: "Option not found or not yours" });
+    }
+
+    optionArray.splice(optionIndex, 1);
+    await party.save();
+
+    const io = req.app.get("io");
+
+    io.to(req.params.partyCode).emit("optionsUpdated", {
+      partyCode: req.params.partyCode,
+      currentCategory: party.currentCategory,
+      selectionMode: party.selectionMode,
+      finalizedResult: party.finalizedResult,
+      foodOptions: party.foodOptions,
+      gameOptions: party.gameOptions
+    });
+
+    res.json(party);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.put("/:partyCode/vote", authMiddleware, async (req, res) => {
   try {
     const { optionName } = req.body;
@@ -166,30 +291,19 @@ router.put("/:partyCode/vote", authMiddleware, async (req, res) => {
       return res.status(404).json({ msg: "Party not found" });
     }
 
+    if (party.selectionMode !== "voting") {
+      return res.status(400).json({
+        msg: "Voting is not enabled for this party"
+      });
+    }
+
     const userId = req.user;
 
-    // Determine correct options array
     const optionArray =
       party.currentCategory === "food"
         ? party.foodOptions
         : party.gameOptions;
 
-    // Count total votes user has already made
-    let totalVotesByUser = 0;
-
-    optionArray.forEach(option => {
-      if (option.votes.some(v => v.toString() === userId)) {
-        totalVotesByUser++;
-      }
-    });
-
-    if (totalVotesByUser >= 2) {
-      return res.status(400).json({
-        msg: "You can only vote for 2 options"
-      });
-    }
-
-    // Find selected option
     const selectedOption = optionArray.find(
       option => option.name === optionName
     );
@@ -198,20 +312,104 @@ router.put("/:partyCode/vote", authMiddleware, async (req, res) => {
       return res.status(404).json({ msg: "Option not found" });
     }
 
-    // Prevent duplicate vote
-    if (selectedOption.votes.includes(userId)) {
-      return res.status(400).json({
-        msg: "You already voted for this option"
-      });
-    }
+    const existingVoteIndex = selectedOption.votes.findIndex(
+      v => v.toString() === userId
+    );
 
-    // Add vote
-    selectedOption.votes.push(userId);
+    if (existingVoteIndex !== -1) {
+      selectedOption.votes.splice(existingVoteIndex, 1);
+    } else {
+      let totalVotesByUser = 0;
+
+      optionArray.forEach(option => {
+        if (option.votes.some(v => v.toString() === userId)) {
+          totalVotesByUser++;
+        }
+      });
+
+      if (totalVotesByUser >= 2) {
+        return res.status(400).json({
+          msg: "You can only vote for 2 options"
+        });
+      }
+
+      selectedOption.votes.push(userId);
+    }
 
     await party.save();
 
-    res.json(party);
+    const io = req.app.get("io");
 
+    io.to(req.params.partyCode).emit("optionsUpdated", {
+      partyCode: req.params.partyCode,
+      currentCategory: party.currentCategory,
+      selectionMode: party.selectionMode,
+      finalizedResult: party.finalizedResult,
+      foodOptions: party.foodOptions,
+      gameOptions: party.gameOptions
+    });
+
+    res.json(party);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put("/:partyCode/finalize-voting", authMiddleware, async (req, res) => {
+  try {
+    const party = await Party.findOne({
+      partyCode: req.params.partyCode
+    });
+
+    if (!party) {
+      return res.status(404).json({ msg: "Party not found" });
+    }
+
+    if (party.host.toString() !== req.user) {
+      return res.status(403).json({ msg: "Only host can finalize voting" });
+    }
+
+    if (party.selectionMode !== "voting") {
+      return res.status(400).json({ msg: "Party is not in voting mode" });
+    }
+
+    if (party.currentCategory === "music") {
+      return res.status(400).json({ msg: "No votable options in music category" });
+    }
+
+    const optionArray =
+      party.currentCategory === "food"
+        ? party.foodOptions
+        : party.gameOptions;
+
+    if (!optionArray.length) {
+      return res.status(400).json({ msg: "No options to finalize" });
+    }
+
+    let winner = optionArray[0];
+
+    optionArray.forEach(option => {
+      if (option.votes.length > winner.votes.length) {
+        winner = option;
+      }
+    });
+
+    party.finalizedResult = {
+      category: party.currentCategory,
+      optionName: winner.name,
+      votes: winner.votes.length
+    };
+
+    await party.save();
+
+    const io = req.app.get("io");
+
+    io.to(req.params.partyCode).emit("votingFinalized", {
+      partyCode: req.params.partyCode,
+      finalizedResult: party.finalizedResult
+    });
+
+    res.json(party);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

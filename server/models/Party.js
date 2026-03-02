@@ -33,7 +33,27 @@ const PartySchema = new mongoose.Schema(
       default: "waiting",
     },
 
-    // 🔥 ADD THESE BELOW
+    selectionMode: {
+      type: String,
+      enum: ["voting", "random"],
+      default: null,
+    },
+
+    finalizedResult: {
+      category: {
+        type: String,
+        enum: ["food", "games", "music"],
+        default: null,
+      },
+      optionName: {
+        type: String,
+        default: null,
+      },
+      votes: {
+        type: Number,
+        default: 0,
+      }
+    },
 
     foodOptions: [
       {
@@ -69,7 +89,5 @@ const PartySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-
 
 module.exports = mongoose.model("Party", PartySchema);
