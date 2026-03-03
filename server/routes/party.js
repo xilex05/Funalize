@@ -188,18 +188,21 @@ router.put("/:partyCode/selection-mode", authMiddleware, async (req, res) => {
     let randomPayload = null;
 
     if (selectionMode === "random") {
-      const randomPool = [
-        ...party.foodOptions.map(option => ({
-          name: option.name,
-          category: "food",
-          votes: option.votes.length
-        })),
-        ...party.gameOptions.map(option => ({
-          name: option.name,
-          category: "games",
-          votes: option.votes.length
-        }))
-      ];
+      if (party.currentCategory === "music") {
+        return res.status(400).json({
+          msg: "No random options available in music category"
+        });
+      }
+
+      const activeCategory = party.currentCategory === "food" ? "food" : "games";
+      const activeOptions =
+        activeCategory === "food" ? party.foodOptions : party.gameOptions;
+
+      const randomPool = activeOptions.map(option => ({
+        name: option.name,
+        category: activeCategory,
+        votes: option.votes.length
+      }));
 
       if (!randomPool.length) {
         return res.status(400).json({ msg: "No options available for random mode" });
@@ -208,7 +211,7 @@ router.put("/:partyCode/selection-mode", authMiddleware, async (req, res) => {
       const winner = randomPool[Math.floor(Math.random() * randomPool.length)];
 
       party.finalizedResult = {
-        category: "all",
+        category: activeCategory,
         optionNames: [winner.name],
         optionName: winner.name,
         votes: winner.votes

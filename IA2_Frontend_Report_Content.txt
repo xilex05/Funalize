@@ -1,0 +1,224 @@
+IA2 REPORT (ICT 3230 Full Stack Web Development Tools)
+Project: Funalize - Real-Time Party Decision Assistant
+
+Submission Date: 06 March 2026
+
+============================================================
+1. TITLE OF THE PROJECT
+============================================================
+Funalize: A Real-Time Collaborative Party Decision Platform Using MERN Stack
+
+
+============================================================
+2. GROUP DETAILS
+============================================================
+Group Number: ____________________
+
+Member 1
+Enrollment Number: ____________________
+Student Name: ____________________
+
+Member 2
+Enrollment Number: ____________________
+Student Name: ____________________
+
+Member 3
+Enrollment Number: ____________________
+Student Name: ____________________
+
+Member 4
+Enrollment Number: ____________________
+Student Name: ____________________
+
+
+============================================================
+3. PROJECT ABSTRACT
+============================================================
+Funalize is a full-stack web application developed to help groups make quick and fair party-related decisions. The platform allows users to create or join a party room using a unique party code and collaborate in real time while selecting options in different categories (Food, Games, and Music).
+
+The application supports two primary decision modes:
+1. Voting mode, where members vote for their preferred options (up to two votes per user in the active category).
+2. Random mode, where a random picker animation selects a final option from the active category.
+
+The system also includes role-based control, where the host manages category and mode transitions, while all participants can view updates instantly through Socket.IO events. Additional features include secure login/signup using JWT authentication, live option updates, real-time member list synchronization, and an in-room chat system.
+
+Technologies used:
+- Frontend: React (Vite), React Router, Bootstrap Icons, custom CSS
+- Backend: Node.js, Express.js, Socket.IO
+- Database: MongoDB with Mongoose
+- Authentication: JWT + bcrypt
+
+The project demonstrates practical implementation of real-time full-stack architecture, collaborative UI state management, and secure REST API design.
+
+
+============================================================
+4. HIGH-LEVEL DESIGN
+============================================================
+4.1 System Architecture
+
++----------------------+        HTTP (REST APIs)        +----------------------+
+|   React Frontend     |  ----------------------------> |  Express Backend      |
+|  (Vite + Router)     |                                |  (Node.js)            |
++----------------------+                                +----------------------+
+          |                                                           |
+          |                 Socket.IO Events                          |
+          +---------------------------------------------------------->|
+          |<----------------------------------------------------------+
+          |                                                           |
+          |                                            Mongoose Models|
+          |                                                           v
+                                                   +----------------------+
+                                                   |  MongoDB Database     |
+                                                   +----------------------+
+
+4.2 Main Functional Modules
+1. Authentication Module
+- User registration and login
+- Password hashing with bcrypt
+- JWT token generation and protected routes
+
+2. Party Room Module
+- Create party and generate unique party code
+- Join party by code
+- Real-time member synchronization
+
+3. Option Management Module
+- Add/delete options in active category
+- Enforce limit of 3 options per user
+- Lock editing when a mode is active (non-host users)
+
+4. Decision Engine Module
+- Voting mode with max 2 votes per user
+- Finalize voting to compute winner(s)
+- Random mode with animated picker and winner reveal
+
+5. Real-Time Communication Module
+- Live updates via Socket.IO (category changes, options updates, mode updates, finalized results, chat updates)
+
+6. Chat Module
+- In-party chat for members
+- Message history persisted in database with sender details and timestamp
+
+4.3 Data Flow (Simplified)
+1. User logs in and gets JWT.
+2. User creates/joins party room.
+3. Frontend sends REST requests for actions (add option, vote, mode change).
+4. Backend updates MongoDB and emits Socket.IO events to party room.
+5. All connected clients instantly update UI state.
+
+
+============================================================
+5. COMPONENTS / CONCEPTS USED
+============================================================
+| S.No | Component / Concept           | Purpose in Application |
+|------|-------------------------------|------------------------|
+| 1    | React Functional Components   | Build modular UI screens (Login, Signup, Party Selection, Party Page). |
+| 2    | React Hooks (useState/useEffect/useRef) | Manage local state, side effects, timers, and live updates. |
+| 3    | React Router                  | Navigation between auth and party routes. |
+| 4    | PrivateRoute                  | Restrict pages to authenticated users only. |
+| 5    | Fetch API                     | Communicate with backend REST endpoints. |
+| 6    | Express.js Router             | Organize backend APIs for auth and party operations. |
+| 7    | MongoDB + Mongoose            | Store users, party metadata, options, votes, and chat messages. |
+| 8    | JWT Authentication            | Secure user sessions and authorize protected operations. |
+| 9    | bcrypt                        | Hash user passwords before storage. |
+| 10   | Socket.IO                     | Real-time synchronization among all party members. |
+| 11   | Role-Based Access (Host vs Guest) | Control privileged operations (category/mode changes, finalization). |
+| 12   | Event-Driven UI Updates       | Keep participants in sync without manual refresh. |
+| 13   | Category-Based Filtering      | Isolate options and decisions by selected section (Food/Games/Music). |
+| 14   | Animated Random Picker        | Improve user experience during random winner selection. |
+| 15   | Responsive Neon UI Styling    | Provide modern and engaging interface design. |
+
+
+============================================================
+6. SCREENSHOTS AND DESCRIPTIONS
+============================================================
+Note: Insert actual screenshots in final PDF. Suggested captions are given below.
+
+Screenshot 1: Login Page
+Description:
+- Shows user login form with email and password fields.
+- Validates credentials and routes to party selection on success.
+
+Screenshot 2: Signup Page
+Description:
+- New users can register with username, email, and password.
+- Password is hashed on backend before saving.
+
+Screenshot 3: Party Selection Screen
+Description:
+- User can host a new party or join an existing party using party code.
+- Displays entry point to collaborative room.
+
+Screenshot 4: Party Room - Category Tabs
+Description:
+- Shows Food, Games, and Music category navigation.
+- Host can switch active category; all clients receive live update.
+
+Screenshot 5: Option Management Panel
+Description:
+- Users can add options in active category.
+- Shows user's own options with delete controls.
+- Editing lock appears when selection mode is active.
+
+Screenshot 6: Voting Mode
+Description:
+- Displays vote buttons and vote counts for each option.
+- Enforces maximum two votes per user in current category.
+
+Screenshot 7: Random Mode Picker
+Description:
+- Animated picker scrolls through options and highlights a winner.
+- Winner result is synchronized for all members in real time.
+
+Screenshot 8: Winner Overlay
+Description:
+- Final result displayed with celebratory visual effects.
+- Shows selected option and vote details.
+
+Screenshot 9: Members and Chat Panel
+Description:
+- Displays all joined members and role labels.
+- Real-time chat enables communication within party room.
+
+
+============================================================
+7. DETAILS OF INDIVIDUAL CONTRIBUTIONS
+============================================================
+Member 1: ____________________
+- Implemented authentication flow (signup/login) and JWT handling.
+- Created protected route logic and session management.
+
+Member 2: ____________________
+- Developed party creation/join workflow and room lifecycle APIs.
+- Built category selection and option management features.
+
+Member 3: ____________________
+- Implemented voting logic, vote limits, and finalize-voting flow.
+- Added random selection engine and winner finalization.
+
+Member 4: ____________________
+- Designed frontend UI/UX (neon theme), responsive layout, and animations.
+- Integrated Socket.IO real-time events and chat synchronization.
+
+(Adjust contributions as per actual work distribution.)
+
+
+============================================================
+8. CONCLUSION
+============================================================
+Funalize successfully demonstrates the practical use of MERN-stack technologies to build an interactive, real-time collaborative web application. The system solves a common group problem (deciding activities/items) by combining structured workflows (voting) with lightweight spontaneity (random mode).
+
+The project highlights key full-stack competencies such as secure authentication, REST API design, real-time bidirectional communication, role-based controls, and dynamic UI state management. The final outcome is a usable and visually engaging platform that supports multi-user collaboration with low latency.
+
+Future improvements can include analytics dashboard, stronger moderation controls, media sharing in chat, deployment to cloud infrastructure, and automated testing coverage.
+
+
+============================================================
+REFERENCES
+============================================================
+1. React Documentation - https://react.dev/
+2. Express.js Documentation - https://expressjs.com/
+3. MongoDB Documentation - https://www.mongodb.com/docs/
+4. Mongoose Documentation - https://mongoosejs.com/docs/
+5. Socket.IO Documentation - https://socket.io/docs/v4/
+6. JWT (jsonwebtoken) - https://github.com/auth0/node-jsonwebtoken

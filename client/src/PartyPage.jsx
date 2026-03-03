@@ -501,7 +501,7 @@ function PartyPage() {
               const isMe = memberId === String(currentUserId);
 
               return (
-                <div key={memberId} className={`member-item ${memberIsHost ? "host" : ""}`}>
+                <div key={memberId} className={`member-item ${isMe ? "me" : ""}`}>
                   <div className="member-avatar">
                     {getEntityName(member).slice(0, 1).toUpperCase()}
                   </div>
@@ -627,12 +627,7 @@ function PartyPage() {
                 <div className={`music-disc ${discoMode ? "disco-ball" : "cd"}`}>
                   <div className="disc-core"></div>
                 </div>
-                <h3>{discoMode ? "Disco Mode" : "Music Mode"}</h3>
-                <p>
-                  {discoMode
-                    ? "RGB lights are on. Let the party glow."
-                    : "Smooth rotating vinyl vibe."}
-                </p>
+                <h3>{discoMode ? "Disco Mode" : "Chill Mode"}</h3>
               </div>
             </section>
           ) : (

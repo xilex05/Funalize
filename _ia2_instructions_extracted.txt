@@ -1,0 +1,33 @@
+
+
+===== PAGE 1 =====
+
+ 
+ 
+ 
+SCHOOL OF COMPUTER ENGINEERING 
+VI SEMESTER B.TECH. (E/F/G/H/I) 
+ICT 3230 Full Stack Web Development Tools 
+IA2: Group-Assignment 
+Date: 06-02-2026                                                Max Marks: 05                                                              
+LAST DATE FOR SUBMISSION- ON OR BEFORE 06/03/2026, 5:00 PM 
+                                  
+1. Design and develop a front-end application using React, Bootstrap/ReactStrap (MERN 
+stack) and submit a report as specified below. 
+The report should consist of the following (maximum 5 pages): 
+1. Title of the Project 
+2. Group Details: (Group Number, Enrollment Numbers, Student Names – Maximum of 4 
+members per group) 
+3. Project Abstract: A brief overview of the application, including its purpose, functionalities, 
+and technologies used 
+4. High-Level Design: Diagrams and descriptions of system architecture and components 
+5. Components/Concepts Used: A table listing various components/concepts used and their 
+purpose in the application 
+6. Screenshots and Descriptions: Include key screenshots of the application with descriptions 
+7. Details of Individual Contributions 
+8. Conclusion: Summarize the application outcomes 
+NOTE:  
+Upload the archived source code of the application to LMS along with above report.  
+Please remove the installed node_modules to optimize file size.  
+Report File Name can be Groupname_SubjectCode_Frontend_Report.pdf.  
+Source code filename can be Groupname _SubjectCode_Frontend_Code.zip 
