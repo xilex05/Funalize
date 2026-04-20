@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+// This schema stores the full shared state of a party room,
+// including members, options, final results, and chat history.
 const PartySchema = new mongoose.Schema(
   {
     partyCode: {
@@ -116,4 +118,5 @@ const PartySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// This exports the Party model for all backend room operations.
 module.exports = mongoose.model("Party", PartySchema);

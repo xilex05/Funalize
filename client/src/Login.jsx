@@ -3,6 +3,8 @@ import { useState } from "react";
 import axios from "axios";
 import "./App.css";
 
+// This page handles user login by taking email/password,
+// calling the backend login API, and storing the returned token.
 function Login() {
   const navigate = useNavigate();
 
@@ -10,6 +12,8 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // This function sends the login request to the backend
+  // and redirects the user to the party selection page on success.
   const handleLogin = async (e) => {
     e.preventDefault();
 

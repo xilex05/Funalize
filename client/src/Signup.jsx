@@ -3,6 +3,8 @@ import { useState } from "react";
 import axios from "axios";
 import "./App.css";
 
+// This page handles account creation by collecting user details
+// and sending them to the backend registration API.
 function Signup() {
   const navigate = useNavigate();
 
@@ -11,6 +13,8 @@ function Signup() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // This function sends signup data to the backend
+  // and moves the user back to the login page after registration.
   const handleSignup = async (e) => {
     e.preventDefault();
 

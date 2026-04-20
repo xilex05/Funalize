@@ -9,18 +9,23 @@ const PARTY_POPULATE = [
   { path: "members", select: "username email" }
 ];
 
+// This helper creates a short room code used for party creation.
 function generateCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
+// This helper fetches one party and also populates host/member details
+// so the frontend can directly show user names.
 function getPartyByCode(partyCode) {
   return Party.findOne({ partyCode }).populate(PARTY_POPULATE);
 }
 
+// This helper extracts a user id from either a populated object or a raw id.
 function getUserId(value) {
   return String(value?._id || value);
 }
 
+// This helper returns a display-friendly name for chat messages and member lists.
 function getMemberName(member) {
   if (!member) {
     return "Member";
@@ -33,6 +38,8 @@ function getMemberName(member) {
   return "Member";
 }
 
+// This helper shapes the response data sent back to the frontend
+// so multiple routes can reuse one consistent payload structure.
 function buildPartyPayload(party, partyCode) {
   return {
     partyCode,
@@ -47,6 +54,8 @@ function buildPartyPayload(party, partyCode) {
   };
 }
 
+// This helper broadcasts the latest party snapshot to every user
+// currently connected to the same socket room.
 async function emitPartySnapshot(io, partyCode) {
   const populatedParty = await getPartyByCode(partyCode);
 
@@ -62,6 +71,7 @@ async function emitPartySnapshot(io, partyCode) {
   });
 }
 
+// This route creates a new party and makes the logged-in user the host.
 router.post("/create", authMiddleware, async (req, res) => {
   try {
     const partyCode = generateCode();
@@ -81,6 +91,8 @@ router.post("/create", authMiddleware, async (req, res) => {
   }
 });
 
+// This route lets a user join an existing party using the room code
+// and then broadcasts the refreshed member list to the room.
 router.post("/join", authMiddleware, async (req, res) => {
   try {
     const { partyCode } = req.body;
@@ -107,6 +119,7 @@ router.post("/join", authMiddleware, async (req, res) => {
   }
 });
 
+// This route returns the current snapshot of one party room.
 router.get("/:partyCode", async (req, res) => {
   try {
     const party = await getPartyByCode(req.params.partyCode);
@@ -121,6 +134,8 @@ router.get("/:partyCode", async (req, res) => {
   }
 });
 
+// This route allows only the host to change the active category
+// used by everyone in the room.
 router.put("/:partyCode/category", authMiddleware, async (req, res) => {
   try {
     const { category } = req.body;
@@ -151,6 +166,8 @@ router.put("/:partyCode/category", authMiddleware, async (req, res) => {
   }
 });
 
+// This route switches the room into voting mode, random mode,
+// or unlock mode and emits the corresponding room updates.
 router.put("/:partyCode/selection-mode", authMiddleware, async (req, res) => {
   try {
     const { selectionMode } = req.body;
@@ -249,6 +266,8 @@ router.put("/:partyCode/selection-mode", authMiddleware, async (req, res) => {
   }
 });
 
+// This route adds a new option into the currently active category
+// after checking validation rules and per-user limits.
 router.post("/:partyCode/add-option", authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
@@ -309,6 +328,8 @@ router.post("/:partyCode/add-option", authMiddleware, async (req, res) => {
   }
 });
 
+// This route removes an option from the active category.
+// Hosts can remove any option, while regular users can remove only their own.
 router.delete("/:partyCode/delete-option", authMiddleware, async (req, res) => {
   try {
     const { optionName } = req.body;
@@ -369,6 +390,8 @@ router.delete("/:partyCode/delete-option", authMiddleware, async (req, res) => {
   }
 });
 
+// This route handles vote and unvote behavior during voting mode
+// and enforces the maximum vote limit per user.
 router.put("/:partyCode/vote", authMiddleware, async (req, res) => {
   try {
     const { optionName } = req.body;
@@ -443,6 +466,8 @@ router.put("/:partyCode/vote", authMiddleware, async (req, res) => {
   }
 });
 
+// This route calculates the winning option(s) for the current category
+// and broadcasts the finalized voting result to the room.
 router.put("/:partyCode/finalize-voting", authMiddleware, async (req, res) => {
   try {
     const party = await getPartyByCode(req.params.partyCode);
@@ -507,6 +532,8 @@ router.put("/:partyCode/finalize-voting", authMiddleware, async (req, res) => {
   }
 });
 
+// This route stores one chat message in the party document
+// and pushes the updated chat list to every connected client.
 router.post("/:partyCode/chat", authMiddleware, async (req, res) => {
   try {
     const message = String(req.body?.message || "").trim();

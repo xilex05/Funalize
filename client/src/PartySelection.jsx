@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 
+// This page lets the logged-in user either create a new party
+// or join an existing one by entering a party code.
 function PartySelection() {
   const navigate = useNavigate();
   const [partyCode, setPartyCode] = useState("");
@@ -9,6 +11,8 @@ function PartySelection() {
 
   const token = localStorage.getItem("token");
 
+  // This function asks the backend to create a new party room
+  // and then redirects the user into that party.
   const handleHost = async () => {
     try {
       const res = await fetch("http://localhost:5000/api/party/create", {
@@ -32,6 +36,8 @@ function PartySelection() {
     }
   };
 
+  // This function sends the typed party code to the backend
+  // and joins the matching room if the code is valid.
   const handleJoin = async () => {
     if (!partyCode.trim()) {
       setError("Please enter a party code");

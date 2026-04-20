@@ -5,7 +5,8 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// REGISTER
+// This route creates a new user account, hashes the password,
+// and saves the new user in MongoDB.
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -31,7 +32,8 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// LOGIN
+// This route verifies login credentials and returns a JWT token
+// that the frontend uses for future protected requests.
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;

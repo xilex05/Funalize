@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 
+// This middleware protects private routes by checking the JWT token
+// and attaching the authenticated user id to req.user.
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 

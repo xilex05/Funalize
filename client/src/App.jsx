@@ -5,6 +5,8 @@ import PrivateRoute from "./PrivateRoute";
 import PartySelection from "./PartySelection";
 import PartyPage from "./PartyPage";
 
+// This component defines the main route structure of the frontend app.
+// It decides which page should render for each URL path.
 function App() {
   return (
     <Routes>

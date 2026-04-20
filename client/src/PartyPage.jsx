@@ -22,10 +22,13 @@ const CONFETTI_BITS = Array.from({ length: 36 }, (_, index) => ({
   rotate: `${(index * 37) % 360}deg`
 }));
 
+// This helper safely extracts an id whether the value is a plain id string
+// or a populated MongoDB object coming from the backend.
 function getEntityId(value) {
   return String(value?._id || value || "");
 }
 
+// This helper returns a readable display name for members in the UI.
 function getEntityName(value) {
   if (!value || typeof value !== "object") {
     return "Member";
@@ -34,6 +37,8 @@ function getEntityName(value) {
   return value.username || value.email || "Member";
 }
 
+// This helper standardizes chat data so the UI can always render messages
+// in a consistent format, even when the backend returns an empty list.
 function normalizeChatMessages(messages) {
   if (!Array.isArray(messages) || !messages.length) {
     return [{ id: "welcome", user: "System", userId: "system", text: "Party chat is live. Keep it fun." }];
@@ -47,6 +52,8 @@ function normalizeChatMessages(messages) {
   }));
 }
 
+// This is the main party room screen. It manages the live party state,
+// option editing, voting, random selection, members list, and chat.
 function PartyPage() {
   const { partyCode } = useParams();
   const [party, setParty] = useState(null);
@@ -74,11 +81,15 @@ function PartyPage() {
   const token = localStorage.getItem("token");
   const currentUserId = token ? JSON.parse(atob(token.split(".")[1])).id : null;
 
+  // This effect loads the initial party data and connects the page
+  // to all real-time socket events for the current room.
   useEffect(() => {
+    // This joins the current browser tab to the correct Socket.IO room.
     const handleConnect = () => {
       socket.emit("joinPartyRoom", partyCode);
     };
 
+    // This helper shows the winner overlay for a fixed amount of time.
     const revealWinnerCardWithTimer = () => {
       if (winnerCardTimeoutRef.current) {
         clearTimeout(winnerCardTimeoutRef.current);
@@ -90,6 +101,7 @@ function PartyPage() {
       }, 5000);
     };
 
+    // This fetches the latest party snapshot when the page first opens.
     const fetchParty = async () => {
       const res = await fetch(`http://localhost:5000/api/party/${partyCode}`, {
         headers: {
@@ -106,6 +118,8 @@ function PartyPage() {
       }
     };
 
+    // This builds the scrolling random-picker animation using the pool
+    // and winner chosen by the backend.
     const startRandomAnimation = (payload) => {
       const pool = payload?.randomPool || [];
       const winner = payload?.winner;
@@ -171,12 +185,14 @@ function PartyPage() {
       return true;
     };
 
+    // This replaces the current page state with the latest server snapshot.
     const handlePartySnapshot = (data) => {
       setParty(data);
       setIsHost(getEntityId(data.host) === String(currentUserId));
       setChatMessages(normalizeChatMessages(data.chatMessages));
     };
 
+    // This updates the active category when the host changes tabs.
     const handleCategoryUpdate = (data) => {
       setParty((prev) => ({
         ...prev,
@@ -184,6 +200,7 @@ function PartyPage() {
       }));
     };
 
+    // This refreshes room data when options or other party fields change.
     const handleOptionsUpdate = (data) => {
       setParty((prev) => ({
         ...prev,
@@ -191,6 +208,7 @@ function PartyPage() {
       }));
     };
 
+    // This reacts to changes between unlocked, voting, and random modes.
     const handleModeUpdate = (data) => {
       setParty((prev) => ({
         ...prev,
@@ -204,6 +222,7 @@ function PartyPage() {
       }
     };
 
+    // This stores the final voting result and shows the winner overlay.
     const handleVotingFinalized = (data) => {
       setParty((prev) => ({
         ...prev,
@@ -213,6 +232,7 @@ function PartyPage() {
       revealWinnerCardWithTimer();
     };
 
+    // This starts the random animation and reveals the winner once it finishes.
     const handleRandomFinalized = (data) => {
       setParty((prev) => ({
         ...prev,
@@ -239,6 +259,7 @@ function PartyPage() {
       }, 4400);
     };
 
+    // This updates the local chat list whenever the backend broadcasts a new message.
     const handleChatUpdated = (data) => {
       setChatMessages(normalizeChatMessages(data.chatMessages));
     };
@@ -324,6 +345,7 @@ function PartyPage() {
 
   const members = Array.isArray(party.members) ? party.members : [];
 
+  // This lets the host switch the active category for the whole room.
   const changeCategory = async (category) => {
     const res = await fetch(`http://localhost:5000/api/party/${partyCode}/category`, {
       method: "PUT",
@@ -344,6 +366,7 @@ function PartyPage() {
     }
   };
 
+  // This adds a new option into the current category.
   const addOption = async () => {
     if (!optionInput.trim()) {
       return;
@@ -369,6 +392,7 @@ function PartyPage() {
     }
   };
 
+  // This enables voting mode, random mode, or unlocks the room.
   const chooseSelectionMode = async (selectionMode) => {
     const res = await fetch(
       `http://localhost:5000/api/party/${partyCode}/selection-mode`,
@@ -392,6 +416,7 @@ function PartyPage() {
     }
   };
 
+  // This removes an option from the current category.
   const deleteOption = async (optionName) => {
     const res = await fetch(
       `http://localhost:5000/api/party/${partyCode}/delete-option`,
@@ -415,6 +440,7 @@ function PartyPage() {
     }
   };
 
+  // This toggles the current user's vote for one option during voting mode.
   const voteOption = async (optionName) => {
     const res = await fetch(`http://localhost:5000/api/party/${partyCode}/vote`, {
       method: "PUT",
@@ -435,6 +461,7 @@ function PartyPage() {
     }
   };
 
+  // This asks the backend to compute the final voting winner(s).
   const finalizeVoting = async () => {
     const res = await fetch(
       `http://localhost:5000/api/party/${partyCode}/finalize-voting`,
@@ -457,6 +484,7 @@ function PartyPage() {
     }
   };
 
+  // This sends a new chat message to the backend and updates the local list.
   const sendChatMessage = () => {
     const message = chatInput.trim();
     if (!message) {
